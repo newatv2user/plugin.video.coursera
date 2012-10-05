@@ -1,0 +1,6 @@
+<settings>
+	<setting id="username" type="text" label="Username (email)"/>
+	<setting id="password" type="text" label="Password" option="hidden"/>
+	<setting type="sep"/>
+	<setting id="viewmode" type="enum" label="Default View Mode (Confluence only)" values="Default|List|Big List|Thumbnail|Poster Wrap|Fanart|Media Info|Media Info 2" default="0" />
+</settings>
