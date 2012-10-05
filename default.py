@@ -237,25 +237,25 @@ def Login():
 def SetViewMode():
     try:
         # if (xbmc.getSkinDir() == "skin.confluence"):
-        if Addon.getSetting('view_mode') == "1": # List
+        if Addon.getSetting('viewmode') == "1": # List
             xbmc.executebuiltin('Container.SetViewMode(502)')
-        if Addon.getSetting('view_mode') == "2": # Big List
+        if Addon.getSetting('viewmode') == "2": # Big List
             xbmc.executebuiltin('Container.SetViewMode(51)')
-        if Addon.getSetting('view_mode') == "3": # Thumbnails
+        if Addon.getSetting('viewmode') == "3": # Thumbnails
             xbmc.executebuiltin('Container.SetViewMode(500)')
-        if Addon.getSetting('view_mode') == "4": # Poster Wrap
+        if Addon.getSetting('viewmode') == "4": # Poster Wrap
             xbmc.executebuiltin('Container.SetViewMode(501)')
-        if Addon.getSetting('view_mode') == "5": # Fanart
+        if Addon.getSetting('viewmode') == "5": # Fanart
             xbmc.executebuiltin('Container.SetViewMode(508)')
-        if Addon.getSetting('view_mode') == "6":  # Media info
+        if Addon.getSetting('viewmode') == "6":  # Media info
             xbmc.executebuiltin('Container.SetViewMode(504)')
-        if Addon.getSetting('view_mode') == "7": # Media info 2
+        if Addon.getSetting('viewmode') == "7": # Media info 2
             xbmc.executebuiltin('Container.SetViewMode(503)')
             
-        if Addon.getSetting('view_mode') == "0": # Media info for Quartz?
+        if Addon.getSetting('viewmode') == "0": # Media info for Quartz?
             xbmc.executebuiltin('Container.SetViewMode(52)')
     except:
-        print "SetViewMode Failed: " + Addon.getSetting('view_mode')
+        print "SetViewMode Failed: " + Addon.getSetting('viewmode')
         print "Skin: " + xbmc.getSkinDir()
         
 def addDir(Listitems):
