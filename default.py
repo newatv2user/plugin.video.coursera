@@ -135,7 +135,7 @@ def browse():
             Title = common.parseDOM(Segment, "a", {"class": "lecture-link"})[0]
             Title = '* ' + common.stripTags(Title)
             Link = common.parseDOM(Segment, "a", {"class": "lecture-link"}, ret="data-lecture-view-link")[0]
-            pat = re.compile('.+?org/(.+?)/.+?=(.+?)').findall(Link)
+            pat = re.compile('.+?org/(.+?)/.+?=(.+)').findall(Link)
             classname, vidID = pat[0]
             Mediaitem = MediaItem()
             Mediaitem.Url = pluginUrl + "?play=" + urllib.quote_plus(VID_REDIRECT_URL % (classname, classname, vidID))      
