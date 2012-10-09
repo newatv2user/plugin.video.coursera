@@ -119,7 +119,7 @@ def browse():
         print 'not found'
         return
     item_list = item_list[0]
-    Headers = common.parseDOM(item_list, "a", {"class": "list_header_link expanded"})
+    Headers = common.parseDOM(item_list, "a", {"class": "list_header_link [a-z]*"})
     Items = common.parseDOM(item_list, "ul", {"class": "item_section_list"})
     MediaItems = []
     for i in range(len(Headers)):
