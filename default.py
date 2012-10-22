@@ -13,6 +13,7 @@ import xbmcaddon, xbmcgui, xbmcplugin, xbmc
 from xbmcgui import ListItem
 import StorageServer, CommonFunctions
 import json
+import random
 
 Addon = xbmcaddon.Addon()
 Addonid = Addon.getAddonInfo('id') 
@@ -29,7 +30,7 @@ common.dbg = False
 common.dbglevel = 3
 
 # initialise cache object to speed up plugin operation
-cache = StorageServer.StorageServer(Addonid)
+cache = StorageServer.StorageServer(Addonid, 12)
 
 CSRF_URL = 'https://www.coursera.org/maestro/api/user/csrf_token'
 REDIRECT_URL = 'https://class.coursera.org/%s/auth/auth_redirector?type=login&subtype=normal&email=&visiting=/%s/lecture/index&minimal=true'
@@ -196,41 +197,64 @@ def courses():
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
     ## Set Default View Mode. This might break with different skins. But who cares?
     SetViewMode()
+    
+def csrfMake():
+    n = ''
+    t = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    e = 24
+    for r in range(e):
+        n += t[random.randrange(len(t))]
+        
+    return n
+    
 
 def Login():
-    username = Addon.getSetting("username")
-    password = Addon.getSetting("password")
-    cj = cookielib.LWPCookieJar()
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.open(CSRF_URL)
-    formParams = {
+    ret = {}
+    ret['ID'] = None
+    try:
+        username = Addon.getSetting("username")
+        password = Addon.getSetting("password")
+        cj = cookielib.LWPCookieJar()
+        try:
+            cj.load(cookiepath, ignore_discard=True)
+        except:
+            pass
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        formParams = {
             'email_address': username,
             'password': password,
-        }
+            }
     
-    csrftoken = ""
-    for _, cookie in enumerate(cj):
-        if cookie.name == 'csrftoken':
-            csrftoken = cookie.value
-     
-    opener.addheaders = [
-            ('X-Requested-With', 'XMLHttpRequest'),
-            ('X-CSRFToken', csrftoken),
-            ('Referer', LOGIN_REFERER),
-            ('Host', LOGIN_HOST)
-        ]
+        csrftoken = None
+        for _, cookie in enumerate(cj):
+            if cookie.name == 'csrftoken':
+                csrftoken = cookie.value
+            
+        if not csrftoken:
+            csrftoken = csrfMake()
+        
+        print 'csrftoken: ' + csrftoken
+        opener.addheaders = [
+                             ('X-Requested-With', 'XMLHttpRequest'),
+                             ('X-CSRFToken', csrftoken),
+                             ('Referer', LOGIN_REFERER),
+                             ('Host', LOGIN_HOST),
+                             ('Cookie', 'csrftoken=%s' % csrftoken)
+                            ]
+        
+        formParams = urllib.urlencode(formParams)
+        resp = opener.open(LOGIN_URL, formParams)
+        html = resp.read()
+        cj.save(cookiepath, ignore_discard=True)
+        resp.close()
     
-    formParams = urllib.urlencode(formParams)
-    resp = opener.open(LOGIN_URL, formParams)
-    html = resp.read()
-    cj.save(cookiepath, ignore_discard=True)
-    resp.close()
+        rjson = json.loads(html)
+        UserID = rjson['id']      
     
-    rjson = json.loads(html)
-    UserID = rjson['id']      
     
-    ret = {}
-    ret['ID'] = UserID
+        ret['ID'] = UserID
+    except:
+        pass
     return ret
 
 # Set View Mode selected in the setting
