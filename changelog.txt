@@ -1,3 +1,6 @@
+[B]Version 0.0.3[/B]
+  - Added Trailers
+
 [B]Version 0.0.2[/B]
   - Fixed csrf issues
   

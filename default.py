@@ -1,12 +1,3 @@
-'''
-Created on Oct 4, 2012
-
-@author: newatv2user
-based on one or more of following:
-https://github.com/itelichko/coursera-download
-https://github.com/jplehmann/coursera
-https://github.com/dmotitsk/coursera
-'''
 import sys, os
 import urllib, urllib2, cookielib, re
 import xbmcaddon, xbmcgui, xbmcplugin, xbmc
@@ -183,10 +174,18 @@ def courses():
         Plot += 'Instructor: ' + Instructor + '\n'
         Plot += Description
         
+        YoutubeID = item['video']
+        Trailer = None
+        if YoutubeID != '':
+            Trailer = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % YoutubeID
+        
         Mediaitem = MediaItem()
         Mediaitem.Image = Image
         Mediaitem.Url = pluginUrl + "?browse=" + urllib.quote_plus(Url)
-        Mediaitem.ListItem.setInfo('video', { 'Title': Title, 'Plot': Plot})
+        if not Trailer:
+            Mediaitem.ListItem.setInfo('video', { 'Title': Title, 'Plot': Plot})
+        else:
+            Mediaitem.ListItem.setInfo('video', { 'Title': Title, 'Plot': Plot, 'Trailer': Trailer})
         Mediaitem.ListItem.setThumbnailImage(Mediaitem.Image)
         Mediaitem.ListItem.setLabel(Title)
         Mediaitem.Isfolder = True
