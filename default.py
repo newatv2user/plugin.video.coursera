@@ -77,6 +77,8 @@ def main():
         browse()
     elif pluginQuery.startswith('?header'):
         return
+    elif pluginQuery.startswith('?othercourses'):
+        courses(True)
     else:
         courses()
         
@@ -142,7 +144,7 @@ def browse():
         
     
 
-def courses():
+def courses(Active=False):
     print 'courses'
     
     UID = cache.cacheFunction(Login)['ID']
@@ -158,7 +160,7 @@ def courses():
     for item in dJson:        
         Courses = item['courses']
         Course = Courses[0]
-        if not Course['active']:
+        if Course['active'] == Active:
             continue
         Title = item['name']
         Image = item['photo']
@@ -172,7 +174,8 @@ def courses():
         Plot = 'Start Date: ' + (StartDate if StartDate else '') + '\n'
         Plot += 'Duration: ' + (Duration  if Duration else '') + '\n'
         Plot += 'Instructor: ' + (Instructor if Instructor else '') + '\n'
-        Plot += Description
+        Plot += (Description if Description else '')
+        Plot = Plot.replace('<br>', '\n')
         
         YoutubeID = item['video']
         Trailer = None
@@ -188,6 +191,14 @@ def courses():
             Mediaitem.ListItem.setInfo('video', { 'Title': Title, 'Plot': Plot, 'Trailer': Trailer})
         Mediaitem.ListItem.setThumbnailImage(Mediaitem.Image)
         Mediaitem.ListItem.setLabel(Title)
+        Mediaitem.Isfolder = True
+        MediaItems.append(Mediaitem)
+    # Browse Inactive courses
+    if not Active:
+        Mediaitem = MediaItem()
+        Mediaitem.Url = pluginUrl + "?othercourses"
+        Mediaitem.ListItem.setInfo('video', { 'Title': 'Other Courses', 'Plot': 'Subscribed but inactive.'})
+        Mediaitem.ListItem.setLabel('Other Courses')
         Mediaitem.Isfolder = True
         MediaItems.append(Mediaitem)
     addDir(MediaItems)
