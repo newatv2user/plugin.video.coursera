@@ -169,9 +169,9 @@ def courses():
         HomeLink = Course['home_link']
         SplitUrl = HomeLink.rsplit("/", 2)
         Url = REDIRECT_URL % (SplitUrl[1], SplitUrl[1])
-        Plot = 'Start Date: ' + StartDate + '\n'
-        Plot += 'Duration: ' + Duration + '\n'
-        Plot += 'Instructor: ' + Instructor + '\n'
+        Plot = 'Start Date: ' + (StartDate if StartDate else '') + '\n'
+        Plot += 'Duration: ' + (Duration  if Duration else '') + '\n'
+        Plot += 'Instructor: ' + (Instructor if Instructor else '') + '\n'
         Plot += Description
         
         YoutubeID = item['video']
