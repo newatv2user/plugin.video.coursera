@@ -99,7 +99,7 @@ def play():
         xbmcplugin.setResolvedUrl(pluginHandle, False, xbmcgui.ListItem())
         print 'Video not found.'        
     else:
-        xbmcplugin.setResolvedUrl(pluginHandle, True, xbmcgui.ListItem(path=Link[0]))
+        xbmcplugin.setResolvedUrl(pluginHandle, True, xbmcgui.ListItem(path=Link[0]))    
     
 def browse():
     print 'browse'
@@ -108,34 +108,38 @@ def browse():
     temp = cache.cacheFunction(getURL, Url)
     #temp = getURL(Url)
     data = temp['html']
-    item_list = common.parseDOM(data, "div", {"class": "item_list"})
+    item_list = common.parseDOM(data, "div", {"class": "course-item-list"})
     if not item_list:
         print 'not found'
         return
     item_list = item_list[0]
-    Headers = common.parseDOM(item_list, "a", {"class": "list_header_link [a-z]*"})
-    Items = common.parseDOM(item_list, "ul", {"class": "item_section_list"})
+    Headers = common.parseDOM(item_list, "div", {"class": "course-item-list-header [a-z]*"})
+    Items = common.parseDOM(item_list, "ul", {"class": "course-item-list-section-list"})
     MediaItems = []
     for i in range(len(Headers)):
         # First the header
-        Lecture = common.parseDOM(Headers[i], "h3", {"class": "list_header"})[0]
+        Lecture = common.parseDOM(Headers[i], "h3")[0]
         Mediaitem = MediaItem()
-        Mediaitem.Url = pluginUrl + "?header"        
+        Mediaitem.Url = pluginUrl + "?header"
+        Lecture = common.stripTags(Lecture)
+        Lecture = common.replaceHTMLCodes(Lecture)
+        Lecture = Lecture.strip()
         Mediaitem.ListItem.setLabel(Lecture)
         MediaItems.append(Mediaitem)
         # Now the lecture segments
-        Segments = common.parseDOM(Items[i], "li", {"class": "item_row [a-z]*"})
+        Segments = common.parseDOM(Items[i], "li")
         for Segment in Segments:
+            print Segment
             Title = common.parseDOM(Segment, "a", {"class": "lecture-link"})[0]
             Title = '* ' + common.stripTags(Title)
-            Link = common.parseDOM(Segment, "a", {"class": "lecture-link"}, ret="data-lecture-view-link")[0]
+            Link = common.parseDOM(Segment, "a", {"class": "lecture-link"}, ret="data-modal-iframe")[0]
             pat = re.compile('.+?org/(.+?)/.+?=(.+)').findall(Link)
             classname, vidID = pat[0]
             Mediaitem = MediaItem()
-            Mediaitem.Url = pluginUrl + "?play=" + urllib.quote_plus(VID_REDIRECT_URL % (classname, classname, vidID))      
+            Mediaitem.Url = pluginUrl + "?play=" + urllib.quote_plus(VID_REDIRECT_URL % (classname, classname, vidID))
             Mediaitem.ListItem.setLabel(Title)
             Mediaitem.ListItem.setProperty('IsPlayable', 'true')
-            MediaItems.append(Mediaitem)
+            MediaItems.append(Mediaitem)        
             
     addDir(MediaItems)
 
