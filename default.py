@@ -23,12 +23,17 @@ common.dbglevel = 3
 # initialise cache object to speed up plugin operation
 cache = StorageServer.StorageServer(Addonid, 12)
 
-CSRF_URL = 'https://www.coursera.org/maestro/api/user/csrf_token'
+#CSRF_URL = 'https://www.coursera.org/maestro/api/user/csrf_token'
+CSRF_URL = 'https://class.coursera.org/ml-2012-002/class/index'
 REDIRECT_URL = 'https://class.coursera.org/%s/auth/auth_redirector?type=login&subtype=normal&email=&visiting=/%s/lecture/index&minimal=true'
-LOGIN_URL = 'https://www.coursera.org/maestro/api/user/login'
-LOGIN_REFERER = 'https://www.coursera.org/account/signin'
-LOGIN_HOST = "www.coursera.org"
-USER_LIST = 'https://www.coursera.org/maestro/api/topic/list_my?user_id=%s'
+#LOGIN_URL = 'https://www.coursera.org/maestro/api/user/login'
+LOGIN_URL = 'https://accounts.coursera.org/api/v1/login'
+#LOGIN_REFERER = 'https://www.coursera.org/account/signin'
+LOGIN_REFERER = 'https://accounts.coursera.org/signin'
+#LOGIN_HOST = "www.coursera.org"
+LOGIN_HOST = 'https://accounts.coursera.org'
+#USER_LIST = 'https://www.coursera.org/maestro/api/topic/list_my?user_id=%s'
+USER_LIST = 'https://www.coursera.org/maestro/api/topic/list_my'
 CLASSES_HOST = 'https://class.coursera.org'
 VID_REDIRECT_URL = 'https://class.coursera.org/%s/auth/auth_redirector?type=login&subtype=normal&email=&visiting=/%s/lecture/view?lecture_id=%s'
 
@@ -54,7 +59,12 @@ def getURL(url):
     except:
         pass
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    response = opener.open(url)
+    try:
+        response = opener.open(url)
+    except:
+        Login()
+        response = opener.open(url)
+        
     if 'redirect' in url:
         pat = re.compile('visiting=([^&]+)').findall(url)
         #splits = url.split("/auth", 1)
@@ -87,6 +97,7 @@ def play():
     Url = pluginQuery[6:].strip()
     Url = urllib.unquote_plus(Url)
     temp = cache.cacheFunction(getURL, Url)
+    #temp = getURL(Url)
     data = temp['html']
     #print data
     PLContainer = common.parseDOM(data, "div", {"id": "QL_player_container_first"})
@@ -151,12 +162,15 @@ def browse():
 def courses(Active=False):
     print 'courses'
     
-    UID = cache.cacheFunction(Login)['ID']
-    if not UID:
-        xbmcgui.Dialog().ok("Coursera", "Unable to login.")
-        return
-    Url = USER_LIST % UID
+    #UID = cache.cacheFunction(Login)['ID']
+    ##UID = Login()['ID']
+    ##if not UID:
+    ##    xbmcgui.Dialog().ok("Coursera", "Unable to login.")
+    ##    return
+    ##Url = USER_LIST % UID
+    Url = USER_LIST
     data = cache.cacheFunction(getURL, Url)['html']
+    #data = getURL(Url)['html']
     dJson = json.loads(data)
     # set content type so library shows more views and info
     xbmcplugin.setContent(int(sys.argv[1]), 'movies')
@@ -220,7 +234,38 @@ def csrfMake():
         n += t[random.randrange(len(t))]
         
     return n
-    
+
+def getCsrf():
+    try:
+        cj = cookielib.LWPCookieJar()
+        try:
+            cj.load(cookiepath, ignore_discard=True)
+        except:
+            pass
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        resp = opener.open(CSRF_URL)
+        html = resp.read()
+        cj.save(cookiepath, ignore_discard=True)
+        resp.close()
+
+        csrftoken = None
+        for _, cookie in enumerate(cj):
+            if cookie.name == 'csrf_token':
+                csrftoken = cookie.value
+            
+        if not csrftoken:
+            raise 'Could not get csrf_token'
+
+        return csrftoken
+    except:
+        print 'Error occurred in getCsrf'
+
+class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
+    def http_error_302(self, req, fp, code, msg, headers):
+        print "Cookie Manip Right Here"
+        return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_302
 
 def Login():
     ret = {}
@@ -233,43 +278,73 @@ def Login():
             cj.load(cookiepath, ignore_discard=True)
         except:
             pass
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        opener = urllib2.build_opener(MyHTTPRedirectHandler, urllib2.HTTPCookieProcessor(cj))
+        # change email_address to email
         formParams = {
-            'email_address': username,
+            'email': username,
             'password': password,
             }
     
         csrftoken = None
         for _, cookie in enumerate(cj):
-            if cookie.name == 'csrftoken':
+            if cookie.name == 'csrf_token':
                 csrftoken = cookie.value
             
         if not csrftoken:
-            csrftoken = csrfMake()
+            #csrftoken = csrfMake()
+            csrftoken = getCsrf()
         
-        print 'csrftoken: ' + csrftoken
+        print 'csrf_token: ' + csrftoken
+        #opener.addheaders = [
+        #                     ('X-Requested-With', 'XMLHttpRequest'),
+        #                     ('X-CSRFToken', csrftoken),
+        #                     ('Referer', LOGIN_REFERER),
+        #                     ('Host', LOGIN_HOST),
+        #                     ('Cookie', 'csrftoken=%s' % csrftoken)
+        #                    ]
         opener.addheaders = [
-                             ('X-Requested-With', 'XMLHttpRequest'),
-                             ('X-CSRFToken', csrftoken),
-                             ('Referer', LOGIN_REFERER),
-                             ('Host', LOGIN_HOST),
-                             ('Cookie', 'csrftoken=%s' % csrftoken)
-                            ]
+                                ('Referer', LOGIN_REFERER),
+                                ('Origin', LOGIN_HOST),
+                                ('X-CSRFToken', csrftoken),
+                                ('Cookie', 'csrftoken=%s' % csrftoken),
+                                ('X-Requested-With', 'XMLHttpRequest'),
+                                ('Content-type', 'application/x-www-form-urlencoded')]#,
+                                #('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0'),
+                                #('Accept', '*/*'),
+                                #('Accept-Encoding', 'gzip,deflate,sdch')
+                            #]
         
         formParams = urllib.urlencode(formParams)
-        resp = opener.open(LOGIN_URL, formParams)
+        try:
+            resp = opener.open(LOGIN_URL, formParams)
+        except URLError as e:
+            if hasattr(e, 'reason'):
+                print 'Server could not be reached.'
+                print 'Reason: ', e.reason
+            elif hasattr(e, 'code'):
+                print 'Server error'
+                print 'Error code: ', e.code
+        else:
+            pass
+            
+        print 'no error till opening page'
         html = resp.read()
+        #print html
         cj.save(cookiepath, ignore_discard=True)
+        print 'new cookiejar saved'
         resp.close()
+        
+        #rjson = json.loads(html)
+        #print rjson
+        #UserID = rjson['id']      
     
-        rjson = json.loads(html)
-        UserID = rjson['id']      
     
-    
-        ret['ID'] = UserID
+        #ret['ID'] = UserID
     except:
-        pass
-    return ret
+        #pass
+        e = sys.exc_info()[0]
+        print e
+    #return ret
 
 # Set View Mode selected in the setting
 def SetViewMode():
