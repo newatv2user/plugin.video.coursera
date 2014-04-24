@@ -60,9 +60,14 @@ def getURL(url):
         pass
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     try:
-        response = opener.open(url)
+        response = opener.open(url)        
     except:
-        Login()
+        print 'Need to log in'
+        if Login():
+            print 'Logged in'
+            cj.load(cookiepath, ignore_discard=True)
+        else:
+            raise 'Could not log in'
         response = opener.open(url)
         
     if 'redirect' in url:
@@ -169,7 +174,11 @@ def courses(Active=False):
     ##    return
     ##Url = USER_LIST % UID
     Url = USER_LIST
-    data = cache.cacheFunction(getURL, Url)['html']
+    try:
+        data = cache.cacheFunction(getURL, Url)['html']
+    except:
+        print 'Login problem'
+        return
     #data = getURL(Url)['html']
     dJson = json.loads(data)
     # set content type so library shows more views and info
@@ -268,8 +277,6 @@ class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
 def Login():
-    ret = {}
-    ret['ID'] = None
     try:
         username = Addon.getSetting("username")
         password = Addon.getSetting("password")
@@ -327,24 +334,29 @@ def Login():
         else:
             pass
             
-        print 'no error till opening page'
         html = resp.read()
-        #print html
         cj.save(cookiepath, ignore_discard=True)
-        print 'new cookiejar saved'
         resp.close()
-        
-        #rjson = json.loads(html)
-        #print rjson
-        #UserID = rjson['id']      
-    
-    
-        #ret['ID'] = UserID
+
+        print cj
+        cjnew = cookielib.LWPCookieJar()
+        try:
+            cjnew.load(cookiepath, ignore_discard=True)
+        except:
+            pass
+        loggedIn = 0
+        for _, cookie in enumerate(cjnew):
+            if cookie.name == 'maestro_login_flag':
+                loggedIn = int(cookie.value)                
+
+        if loggedIn == 1:
+            return True
+        return False
+                
     except:
-        #pass
         e = sys.exc_info()[0]
         print e
-    #return ret
+        return False    
 
 # Set View Mode selected in the setting
 def SetViewMode():
