@@ -145,7 +145,7 @@ def browse():
         # Now the lecture segments
         Segments = common.parseDOM(Items[i], "li")
         for Segment in Segments:
-            print Segment
+            #print Segment
             Title = common.parseDOM(Segment, "a", {"class": "lecture-link"})[0]
             Title = '* ' + common.stripTags(Title)
             Link = common.parseDOM(Segment, "a", {"class": "lecture-link"}, ret="data-modal-iframe")[0]
@@ -338,14 +338,8 @@ def Login():
         cj.save(cookiepath, ignore_discard=True)
         resp.close()
 
-        print cj
-        cjnew = cookielib.LWPCookieJar()
-        try:
-            cjnew.load(cookiepath, ignore_discard=True)
-        except:
-            pass
         loggedIn = 0
-        for _, cookie in enumerate(cjnew):
+        for _, cookie in enumerate(cj):
             if cookie.name == 'maestro_login_flag':
                 loggedIn = int(cookie.value)                
 
