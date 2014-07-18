@@ -290,6 +290,7 @@ def Login():
         formParams = {
             'email': username,
             'password': password,
+            'webrequest': 'true'
             }
     
         csrftoken = None
@@ -301,7 +302,7 @@ def Login():
             #csrftoken = csrfMake()
             csrftoken = getCsrf()
         
-        print 'csrf_token: ' + csrftoken
+        #print 'csrf_token: ' + csrftoken
         #opener.addheaders = [
         #                     ('X-Requested-With', 'XMLHttpRequest'),
         #                     ('X-CSRFToken', csrftoken),
